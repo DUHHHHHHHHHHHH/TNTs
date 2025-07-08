@@ -8,11 +8,13 @@ public class Note : MonoBehaviour
     [HideInInspector]
     public int noteTime;
 
-    public enum NoteType { Don, Kan }
+    public enum NoteType { Don, Kan, FinisherDon, FinisherKan }
     public NoteType noteType;
 
-    public Sprite donSprite;  // Assegna nello Inspector lo sprite per Don
-    public Sprite kanSprite;  // Assegna nello Inspector lo sprite per Kan
+    public Sprite donSprite;
+    public Sprite kanSprite;
+    public Sprite finisherDonSprite;  
+    public Sprite finisherKanSprite;   
 
     private SpriteRenderer spriteRenderer;
 
@@ -23,11 +25,24 @@ public class Note : MonoBehaviour
 
     void Start()
     {
-        // Cambia sprite in base al tipo di nota
-        if (noteType == NoteType.Don)
-            spriteRenderer.sprite = donSprite;
-        else if (noteType == NoteType.Kan)
-            spriteRenderer.sprite = kanSprite;
+        switch (noteType)
+        {
+            case NoteType.Don:
+                spriteRenderer.sprite = donSprite;
+                break;
+            case NoteType.FinisherDon:
+                spriteRenderer.sprite = finisherDonSprite;
+                break;
+            case NoteType.Kan:
+                spriteRenderer.sprite = kanSprite;
+                break;
+            case NoteType.FinisherKan:
+                spriteRenderer.sprite = finisherKanSprite;
+                break;
+            default:
+                spriteRenderer.sprite = donSprite; // fallback
+                break;
+        }
     }
 
     void Update()
