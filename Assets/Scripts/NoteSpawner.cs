@@ -5,42 +5,36 @@ public class NoteSpawner : MonoBehaviour
 {
     public GameObject notePrefab;
     public Transform spawnPoint;
-    
-    public float baseScrollSpeed = 5f;  // velocità normale base (unità al secondo)
-    public float userScrollSpeed = 1f;  // moltiplicatore scelto dall’utente (es. da 0.5 a 2)
 
+    public float baseScrollSpeed = 5f;
+    public float userScrollSpeed = 1f;
 
-    public void SpawnAllNotes(List<int> noteTimes)
+        public void SpawnAllNotes(List<int> noteTimes, List<Note.NoteType> noteTypes)
+{
+    float effectiveSpeed = baseScrollSpeed * userScrollSpeed;
 
-
+    for (int i = 0; i < noteTimes.Count; i++)
     {
-        float cumulativeDistance = 0f;
-        float effectiveSpeed = baseScrollSpeed * userScrollSpeed;
+        // Calcola la distanza dalla linea di hit in base al tempo assoluto della nota
+        float distance = noteTimes[i] * effectiveSpeed * 0.001f; // ms -> s
 
-        for (int i = 0; i < noteTimes.Count; i++)
+        Vector3 pos = spawnPoint.position + Vector3.right * distance;
+
+        GameObject noteObj = Instantiate(notePrefab, pos, Quaternion.identity);
+        Note noteScript = noteObj.GetComponent<Note>();
+
+        if (noteScript != null)
         {
-            if (i > 0)
-            {
-                int deltaTime = noteTimes[i] - noteTimes[i - 1];
-                cumulativeDistance += deltaTime * effectiveSpeed * 0.001f; // ms -> s
-            }
+            noteScript.noteType = noteTypes[i];
+            noteScript.noteTime = noteTimes[i];
+            noteScript.speed = effectiveSpeed;
+            noteScript.hitPositionX = spawnPoint.position.x;
+            noteScript.noteType = noteTypes[i];
 
-            Vector3 pos = spawnPoint.position + Vector3.right * cumulativeDistance;
-
-            GameObject noteObj = Instantiate(notePrefab, pos, Quaternion.identity);
-            Note noteScript = noteObj.GetComponent<Note>();
-            
-            if (noteScript != null)
-            {
-                noteScript.noteTime = noteTimes[i];
-                noteScript.speed = effectiveSpeed;
-                noteScript.hitPositionX = spawnPoint.position.x;
-
-                Debug.Log($"Nota creata: Tempo={noteTimes[i]} ms, Posizione={pos}, Velocità={effectiveSpeed}");
-            }
+            Debug.Log($"Nota creata: Tempo={noteTimes[i]} ms, Tipo={noteTypes[i]}, Posizione={pos}, Velocità={effectiveSpeed}");
         }
     }
-
+}
 
 
 }
