@@ -33,7 +33,6 @@ public class GameManager : MonoBehaviour
         }
         else if (inputManager.IsKanPressed())
         {
-            Debug.Log("Kan pressed detected");
             TryHitNotes(new List<Note.NoteType> { Note.NoteType.Kan, Note.NoteType.FinisherKan });
         }
     }

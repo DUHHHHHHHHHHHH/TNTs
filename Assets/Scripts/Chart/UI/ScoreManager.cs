@@ -5,12 +5,20 @@ public class ScoreManager : MonoBehaviour
 {
     public Text TextScorePunteggio;         // Assegna in Inspector
     public Text TextScoreAccuracy;          // Assegna in Inspector
-    public Text TextScoreCombo;             // Nuovo: testo per mostrare la combo
+    public Text TextScoreCombo;             // Testo per mostrare la combo
+
+    public Text TextCountMarvelous;         // Nuovo: contatore Marvelous
+    public Text TextCountGreat;             // Nuovo: contatore Great
+    public Text TextCountMiss;              // Nuovo: contatore Miss
 
     public int maxScore = 1000000; // un milione di punti massimo
     private int totalNotes = 0;
     private int currentScore = 0;
     private int currentCombo = 0;  // Contatore combo
+
+    private int countMarvelous = 0;
+    private int countGreat = 0;
+    private int countMiss = 0;
 
     private float baseNoteScore = 0f;
 
@@ -28,8 +36,14 @@ public class ScoreManager : MonoBehaviour
         baseNoteScore = totalNotes > 0 ? (float)maxScore / totalNotes : 0f;
         currentScore = 0;
         currentCombo = 0;
+
+        countMarvelous = 0;
+        countGreat = 0;
+        countMiss = 0;
+
         UpdateScoreUI();
         UpdateComboUI();
+        UpdateCountUI();
     }
 
     // GameManager chiama questa funzione quando una nota viene colpita
@@ -43,38 +57,44 @@ public class ScoreManager : MonoBehaviour
             int pointsToAdd = Mathf.RoundToInt(baseNoteScore * judgementMultipliers[judgement]);
             currentScore += pointsToAdd;
 
-            // Incrementa combo solo se Marvelous o Great
-            if (judgement == "Marvelous" || judgement == "Great")
+            if (judgement == "Marvelous")
             {
+                countMarvelous++;
+                currentCombo++;
+            }
+            else if (judgement == "Great")
+            {
+                countGreat++;
                 currentCombo++;
             }
         }
         else
         {
-            // Se Miss, resetta combo
+            countMiss++;
             currentCombo = 0;
         }
 
         UpdateScoreUI();
         UpdateComboUI();
+        UpdateCountUI();
     }
 
     // GameManager chiama questa funzione quando c'è un miss
     public void OnMiss()
     {
+        countMiss++;
         currentCombo = 0;
         UpdateComboUI();
         UpdateScoreUI();
+        UpdateCountUI();
     }
 
     private void UpdateScoreUI()
     {
-        Debug.Log($"Updating Score UI: {currentScore}");
         TextScorePunteggio.text = $"Score: {currentScore:N0}";
 
         float accuracy = totalNotes > 0 ? ((float)currentScore / maxScore) * 100f : 0f;
         TextScoreAccuracy.text = $"Accuracy: {accuracy:F2}%";
-        
     }
 
     private void UpdateComboUI()
@@ -86,7 +106,21 @@ public class ScoreManager : MonoBehaviour
         }
         else
         {
-            TextScoreCombo.gameObject.SetActive(false);
+            TextScoreCombo.text = $"Combo: 0";
+            // oppure puoi nascondere il testo combo qui se preferisci
+            // TextScoreCombo.gameObject.SetActive(false);
         }
+    }
+
+    private void UpdateCountUI()
+    {
+        if (TextCountMarvelous != null)
+            TextCountMarvelous.text = $"Marvelous: {countMarvelous}";
+
+        if (TextCountGreat != null)
+            TextCountGreat.text = $"Great: {countGreat}";
+
+        if (TextCountMiss != null)
+            TextCountMiss.text = $"Miss: {countMiss}";
     }
 }
