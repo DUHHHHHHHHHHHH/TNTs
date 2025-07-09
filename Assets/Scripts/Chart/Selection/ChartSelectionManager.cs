@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using System;
-using TMPro;
 
 public class ChartSelectionManager : MonoBehaviour
 {
@@ -13,10 +12,22 @@ public class ChartSelectionManager : MonoBehaviour
     public Dropdown OsuDropdown;
     public Image backgroundImage;
 
+    [Header("Song Info Display (Chart Selection Scene)")]
+    public Text songTitleText;
+    public Text songTitleUnicodeText;
+    public Text songArtistText;
+    public Text songArtistUnicodeText;
+    public Text songCreatorText;
+    public Text songVersionText;
+    public Text songSourceText;
+    public Text songTagsText;
+
     private List<string> folders = new List<string>();
     private List<string> osuFiles = new List<string>();
     private string selectedFolderPath;
-    private string selectedBgPath; // Percorso immagine background selezionata
+    private string selectedBgPath;
+
+    private static MetadataPicker currentSelectedMetadata;
 
     void Start()
     {
@@ -27,7 +38,10 @@ public class ChartSelectionManager : MonoBehaviour
         if (folders.Count > 0)
         {
             FolderDropdown.value = 0;
-            OnFolderChanged(0);
+        }
+        else
+        {
+            ClearSongInfoDisplay();
         }
     }
 
@@ -47,6 +61,7 @@ public class ChartSelectionManager : MonoBehaviour
         if (!Directory.Exists(rootPath))
         {
             Debug.LogError($"Cartella root non trovata: {rootPath}");
+            FolderDropdown.AddOptions(new List<string> { "Nessuna cartella trovata" });
             return;
         }
 
@@ -68,7 +83,11 @@ public class ChartSelectionManager : MonoBehaviour
 
     void OnFolderChanged(int index)
     {
-        if (index < 0 || index >= folders.Count) return;
+        if (index < 0 || index >= folders.Count)
+        {
+            ClearSongInfoDisplay();
+            return;
+        }
 
         selectedFolderPath = folders[index];
         LoadOsuFiles(selectedFolderPath);
@@ -77,7 +96,10 @@ public class ChartSelectionManager : MonoBehaviour
         if (osuFiles.Count > 0)
         {
             OsuDropdown.value = 0;
-            OnOsuFileChanged(0);
+        }
+        else
+        {
+            ClearSongInfoDisplay();
         }
     }
 
@@ -116,9 +138,9 @@ public class ChartSelectionManager : MonoBehaviour
             }
         }
 
-        selectedBgPath = bgPath; // Salva percorso immagine
+        selectedBgPath = bgPath;
 
-        if (File.Exists(bgPath))
+        if (!string.IsNullOrEmpty(bgPath) && File.Exists(bgPath))
         {
             byte[] imageData = File.ReadAllBytes(bgPath);
             Texture2D tex = new Texture2D(2, 2);
@@ -134,23 +156,65 @@ public class ChartSelectionManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("File non trovato in: " + folderPath);
             backgroundImage.sprite = null;
         }
     }
 
     void OnOsuFileChanged(int index)
     {
-        if (index < 0 || index >= osuFiles.Count) return;
-        string selectedOsuFile = osuFiles[index];
+        if (index < 0 || index >= osuFiles.Count)
+        {
+            ClearSongInfoDisplay();
+            currentSelectedMetadata = null;
+            return;
+        }
 
+        string selectedOsuFile = osuFiles[index];
         Debug.Log($"File .osu selezionato: {selectedOsuFile}");
+
+        currentSelectedMetadata = MetadataPicker.Parse(selectedOsuFile);
+        UpdateSongInfoDisplay(currentSelectedMetadata);
+
         PlayerPrefs.SetString("SelectedChart", selectedOsuFile);
+    }
+
+    private void UpdateSongInfoDisplay(MetadataPicker metadata)
+    {
+        if (metadata == null)
+        {
+            ClearSongInfoDisplay();
+            return;
+        }
+
+        songTitleText.text = "Title: " + (string.IsNullOrEmpty(metadata.Title) ? "N/A" : metadata.Title);
+        songTitleUnicodeText.text = "Title Unicode: " + (string.IsNullOrEmpty(metadata.TitleUnicode) ? "N/A" : metadata.TitleUnicode);
+        songArtistText.text = "Artist: " + (string.IsNullOrEmpty(metadata.Artist) ? "N/A" : metadata.Artist);
+        songArtistUnicodeText.text = "Artist Unicode: " + (string.IsNullOrEmpty(metadata.ArtistUnicode) ? "N/A" : metadata.ArtistUnicode);
+        songCreatorText.text = "Creator: " + (string.IsNullOrEmpty(metadata.Creator) ? "N/A" : metadata.Creator);
+        songVersionText.text = "Version: " + (string.IsNullOrEmpty(metadata.Version) ? "N/A" : metadata.Version);
+        songSourceText.text = "Source: " + (string.IsNullOrEmpty(metadata.Source) ? "N/A" : metadata.Source);
+        songTagsText.text = "Tags: " + (string.IsNullOrEmpty(metadata.Tags) ? "N/A" : metadata.Tags);
+    }
+
+    private void ClearSongInfoDisplay()
+    {
+        songTitleText.text = "Title: ";
+        songTitleUnicodeText.text = "Title Unicode: ";
+        songArtistText.text = "Artist: ";
+        songArtistUnicodeText.text = "Artist Unicode: ";
+        songCreatorText.text = "Creator: ";
+        songVersionText.text = "Version: ";
+        songSourceText.text = "Source: ";
+        songTagsText.text = "Tags: ";
     }
 
     public void OnPlayButtonPressed()
     {
-        if (osuFiles.Count == 0) return;
+        if (currentSelectedMetadata == null)
+        {
+            Debug.LogError("Nessuna chart selezionata o metadata non disponibili per l'avvio del gioco.");
+            return;
+        }
 
         int selectedIndex = OsuDropdown.value;
         string selectedOsuPath = osuFiles[selectedIndex];
@@ -158,5 +222,10 @@ public class ChartSelectionManager : MonoBehaviour
         PlayerPrefs.SetString("SelectedChart", selectedOsuPath);
         PlayerPrefs.SetString("SelectedBgPath", selectedBgPath ?? "");
         SceneManager.LoadScene("Gameplay");
+    }
+
+    public static MetadataPicker GetSelectedMetadata()
+    {
+        return currentSelectedMetadata;
     }
 }
