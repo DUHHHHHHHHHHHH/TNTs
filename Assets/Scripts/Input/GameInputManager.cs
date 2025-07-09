@@ -7,11 +7,20 @@ public class GameManager : MonoBehaviour
     public InputManager inputManager;
     public JudgementDisplay judgementDisplay;
     public SoundManager soundManager;
+    public ScoreManager scoreManager;
 
     public float songTime = 0f; // tempo in millisecondi dall’inizio della mappa
     public float hitWindowMs = 50f; // tolleranza in ms
 
     private string lastJudgement = "";
+    private int totalNotes = 0;
+
+    void Start()
+    {
+        totalNotes = GetTotalNotesFromMap();
+        if (scoreManager != null)
+            scoreManager.Initialize(totalNotes);
+    }
 
     void Update()
     {
@@ -74,6 +83,11 @@ public class GameManager : MonoBehaviour
                     }
                 }
 
+                if (scoreManager != null)
+                {
+                    scoreManager.AddScore(judgement);
+                }
+
                 if (judgement != lastJudgement)
                 {
                     judgementDisplay.ShowJudgement(judgement);
@@ -84,6 +98,8 @@ public class GameManager : MonoBehaviour
             else
             {
                 PlayMissSound();
+                if (scoreManager != null)
+                    scoreManager.OnMiss();
             }
         }
         else
@@ -99,6 +115,8 @@ public class GameManager : MonoBehaviour
         {
             activeNotes.Remove(note);
             PlayMissSound();
+            if (scoreManager != null)
+                scoreManager.OnMiss();
             Debug.Log("MISS: nota persa oltre la finestra di hit");
         }
     }
@@ -114,6 +132,13 @@ public class GameManager : MonoBehaviour
         {
             soundManager.PlayMiss();
         }
+    }
+
+    private int GetTotalNotesFromMap()
+    {
+        // Calcola o assegna il numero totale di note nella mappa
+        // Puoi contare la lista completa delle note o impostarlo manualmente
+        return 934; // esempio statico, sostituisci con il valore corretto
     }
 
     public void RegisterNote(Note note) { activeNotes.Add(note); }
