@@ -3,12 +3,14 @@ using UnityEngine.UI;
 
 public class ScoreManager : MonoBehaviour
 {
-    public Text scoreText;      // Assegna in Inspector
-    public Text accuracyText;   // Assegna in Inspector
+    public Text TextScorePunteggio;         // Assegna in Inspector
+    public Text TextScoreAccuracy;          // Assegna in Inspector
+    public Text TextScoreCombo;             // Nuovo: testo per mostrare la combo
 
-    public int maxScore = 1000000; // un milione di punti massimo, come su osu in scoreV2
+    public int maxScore = 1000000; // un milione di punti massimo
     private int totalNotes = 0;
     private int currentScore = 0;
+    private int currentCombo = 0;  // Contatore combo
 
     private float baseNoteScore = 0f;
 
@@ -25,7 +27,9 @@ public class ScoreManager : MonoBehaviour
         totalNotes = totalNotesCount;
         baseNoteScore = totalNotes > 0 ? (float)maxScore / totalNotes : 0f;
         currentScore = 0;
+        currentCombo = 0;
         UpdateScoreUI();
+        UpdateComboUI();
     }
 
     // GameManager chiama questa funzione quando una nota viene colpita
@@ -38,22 +42,51 @@ public class ScoreManager : MonoBehaviour
         {
             int pointsToAdd = Mathf.RoundToInt(baseNoteScore * judgementMultipliers[judgement]);
             currentScore += pointsToAdd;
+
+            // Incrementa combo solo se Marvelous o Great
+            if (judgement == "Marvelous" || judgement == "Great")
+            {
+                currentCombo++;
+            }
+        }
+        else
+        {
+            // Se Miss, resetta combo
+            currentCombo = 0;
         }
 
         UpdateScoreUI();
+        UpdateComboUI();
     }
 
     // GameManager chiama questa funzione quando c'è un miss
     public void OnMiss()
     {
+        currentCombo = 0;
+        UpdateComboUI();
         UpdateScoreUI();
     }
 
     private void UpdateScoreUI()
     {
-        scoreText.text = $"Score: {currentScore:N0}";
+        Debug.Log($"Updating Score UI: {currentScore}");
+        TextScorePunteggio.text = $"Score: {currentScore:N0}";
 
         float accuracy = totalNotes > 0 ? ((float)currentScore / maxScore) * 100f : 0f;
-        accuracyText.text = $"Accuracy: {accuracy:F2}%";
+        TextScoreAccuracy.text = $"Accuracy: {accuracy:F2}%";
+        
+    }
+
+    private void UpdateComboUI()
+    {
+        if (currentCombo > 0)
+        {
+            TextScoreCombo.gameObject.SetActive(true);
+            TextScoreCombo.text = $"Combo: {currentCombo}";
+        }
+        else
+        {
+            TextScoreCombo.gameObject.SetActive(false);
+        }
     }
 }

@@ -28,10 +28,12 @@ public class GameManager : MonoBehaviour
 
         if (inputManager.IsDonPressed())
         {
+            
             TryHitNotes(new List<Note.NoteType> { Note.NoteType.Don, Note.NoteType.FinisherDon });
         }
         else if (inputManager.IsKanPressed())
         {
+            Debug.Log("Kan pressed detected");
             TryHitNotes(new List<Note.NoteType> { Note.NoteType.Kan, Note.NoteType.FinisherKan });
         }
     }
