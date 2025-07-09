@@ -7,11 +7,10 @@ public class GameManager : MonoBehaviour
     public InputManager inputManager;
 
     public float songTime = 0f; // tempo in millisecondi dall’inizio della mappa
-    public float hitWindowMs = 50f; // tolleranza in ms
+    public float hitWindowMs = 100f; // tolleranza in ms
 
     void Update()
     {
-        // Aggiorna il timer (usa Time.deltaTime * 1000 per ms)
         songTime += Time.deltaTime * 1000f;
 
         if (inputManager.IsDonPressed())
@@ -43,7 +42,6 @@ public class GameManager : MonoBehaviour
 
         if (closestNote != null)
         {
-            // Passa il tipo della nota stessa per evitare mismatch
             bool hit = closestNote.TryHit(closestNote.noteType);
             if (hit)
             {
@@ -58,7 +56,6 @@ public class GameManager : MonoBehaviour
         else
         {
             Debug.Log("MISS: nessuna nota colpita.");
-            // Qui puoi aggiungere logica per decrementare punteggio o mostrare feedback visivo
         }
     }
 
