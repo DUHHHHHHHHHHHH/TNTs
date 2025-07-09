@@ -76,3 +76,9 @@ Thumbs.db.meta
 
 # Logs
 *.log
+
+# Shader files da escludere (ShaderLab e HLSL)
+*.shader
+*.hlsl
+*.cginc
+

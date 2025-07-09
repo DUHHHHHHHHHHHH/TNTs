@@ -4,19 +4,19 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using System;
-
 using TMPro;
 
 public class ChartSelectionManager : MonoBehaviour
 {
     [Header("UI References")]
-    public TMP_Dropdown FolderDropdown;
-    public TMP_Dropdown OsuDropdown;
+    public Dropdown FolderDropdown;
+    public Dropdown OsuDropdown;
     public Image backgroundImage;
 
     private List<string> folders = new List<string>();
     private List<string> osuFiles = new List<string>();
     private string selectedFolderPath;
+    private string selectedBgPath; // Percorso immagine background selezionata
 
     void Start()
     {
@@ -31,7 +31,6 @@ public class ChartSelectionManager : MonoBehaviour
         }
     }
 
-    // Ottiene il path completo della cartella taikocharts in Documenti utente
     private string GetChartsRootFolder()
     {
         string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
@@ -117,6 +116,8 @@ public class ChartSelectionManager : MonoBehaviour
             }
         }
 
+        selectedBgPath = bgPath; // Salva percorso immagine
+
         if (File.Exists(bgPath))
         {
             byte[] imageData = File.ReadAllBytes(bgPath);
@@ -140,13 +141,11 @@ public class ChartSelectionManager : MonoBehaviour
 
     void OnOsuFileChanged(int index)
     {
-        // Puoi aggiungere qui preview o info sul file selezionato se vuoi
         if (index < 0 || index >= osuFiles.Count) return;
         string selectedOsuFile = osuFiles[index];
 
         Debug.Log($"File .osu selezionato: {selectedOsuFile}");
         PlayerPrefs.SetString("SelectedChart", selectedOsuFile);
-
     }
 
     public void OnPlayButtonPressed()
@@ -157,6 +156,7 @@ public class ChartSelectionManager : MonoBehaviour
         string selectedOsuPath = osuFiles[selectedIndex];
 
         PlayerPrefs.SetString("SelectedChart", selectedOsuPath);
+        PlayerPrefs.SetString("SelectedBgPath", selectedBgPath ?? "");
         SceneManager.LoadScene("Gameplay");
     }
 }
