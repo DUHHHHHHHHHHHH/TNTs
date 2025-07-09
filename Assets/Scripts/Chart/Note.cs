@@ -4,6 +4,7 @@ public class Note : MonoBehaviour
 {
     public float speed = 5f;
     public float hitPositionX = 0f;
+    public float hitWindow = 0.5f; // tolleranza per colpire la nota (in unità di posizione)
 
     [HideInInspector]
     public int noteTime;
@@ -40,7 +41,7 @@ public class Note : MonoBehaviour
                 spriteRenderer.sprite = finisherKanSprite;
                 break;
             default:
-                spriteRenderer.sprite = donSprite; // fallback
+                spriteRenderer.sprite = donSprite;
                 break;
         }
     }
@@ -49,9 +50,26 @@ public class Note : MonoBehaviour
     {
         transform.position += Vector3.left * speed * Time.deltaTime;
 
-        if (transform.position.x <= hitPositionX)
+        if (transform.position.x < hitPositionX - hitWindow)
+        {
+            // Destroy(gameObject);
+            // Qui puoi aggiungere gestione del miss (es. decremento punteggio)
+        }
+    }
+
+    // Prova a colpire la nota con un input di tipo inputType
+    // Ritorna true se la nota è stata colpita correttamente e distrutta
+    public bool TryHit(NoteType inputType)
+    {
+        float distance = Mathf.Abs(transform.position.x - hitPositionX);
+
+        if (distance <= hitWindow && inputType == noteType)
         {
             Destroy(gameObject);
+            Debug.Log($"Nota colpita: Tipo={noteType}, Posizione={transform.position.x}, Tempo={noteTime} ms");
+            // Qui puoi aggiungere gestione del successo (es. incremento punteggio, effetti)
+            return true;
         }
+        return false; // input errato o fuori tempo
     }
 }

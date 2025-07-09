@@ -1,0 +1,11 @@
+{
+  "profile": "Default",
+  "playstyle": {
+    "keybinds": {
+        "k1": "D",
+        "k2": "F",
+        "k3": "J",
+        "k4": "K"
+    }
+  }
+}
