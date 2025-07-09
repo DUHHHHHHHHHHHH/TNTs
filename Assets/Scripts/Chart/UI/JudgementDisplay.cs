@@ -10,6 +10,11 @@ public class JudgementDisplay : MonoBehaviour
     public float displayTime = 1.0f; // durata più lunga
     public float fadeDuration = 0.5f; // durata dissolvenza
 
+    void Start()
+    {
+        HideAll();
+    }
+
     public void ShowJudgement(string judgement)
     {
         StartCoroutine(ShowJudgementCoroutine(judgement));
@@ -47,7 +52,7 @@ public class JudgementDisplay : MonoBehaviour
         imgToShow.gameObject.SetActive(false);
     }
 
-    private void HideAll()
+    public void HideAll()
     {
         marvelousImage.gameObject.SetActive(false);
         greatImage.gameObject.SetActive(false);
