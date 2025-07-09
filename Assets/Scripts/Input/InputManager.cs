@@ -1,4 +1,4 @@
-using UnityEngine; // IMPORTANTE!
+using UnityEngine;
 
 public class InputManager : MonoBehaviour
 {
@@ -35,13 +35,6 @@ public class InputManager : MonoBehaviour
         }
     }
 
-    public bool IsDonPressed()
-    {
-        return Input.GetKeyDown(key1) || Input.GetKeyDown(key2);
-    }
-
-    public bool IsKanPressed()
-    {
-        return Input.GetKeyDown(key3) || Input.GetKeyDown(key4);
-    }
+    public bool IsDonPressed() { return Input.GetKeyDown(key3) || Input.GetKeyDown(key4); }
+    public bool IsKanPressed() { return Input.GetKeyDown(key1) || Input.GetKeyDown(key2); }
 }

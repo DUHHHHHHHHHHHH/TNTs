@@ -6,52 +6,59 @@ public class GameManager : MonoBehaviour
     public List<Note> activeNotes = new List<Note>();
     public InputManager inputManager;
 
+    public float songTime = 0f; // tempo in millisecondi dall’inizio della mappa
+    public float hitWindowMs = 50f; // tolleranza in ms
+
     void Update()
     {
+        // Aggiorna il timer (usa Time.deltaTime * 1000 per ms)
+        songTime += Time.deltaTime * 1000f;
+
         if (inputManager.IsDonPressed())
         {
-            TryHitNote(Note.NoteType.Don);
+            TryHitNotes(new List<Note.NoteType> { Note.NoteType.Don, Note.NoteType.FinisherDon });
         }
         else if (inputManager.IsKanPressed())
         {
-            TryHitNote(Note.NoteType.Kan);
+            TryHitNotes(new List<Note.NoteType> { Note.NoteType.Kan, Note.NoteType.FinisherKan });
         }
     }
 
-    void TryHitNote(Note.NoteType inputType)
+    void TryHitNotes(List<Note.NoteType> inputTypes)
     {
         Note closestNote = null;
-        float minDistance = float.MaxValue;
+        float minTimeDiff = float.MaxValue;
 
         foreach (var note in activeNotes)
         {
-            float dist = Mathf.Abs(note.transform.position.x - note.hitPositionX);
-            if (dist < minDistance && dist <= note.hitWindow)
+            if (!inputTypes.Contains(note.noteType)) continue;
+
+            float timeDiff = Mathf.Abs(note.noteTime - songTime);
+            if (timeDiff <= hitWindowMs && timeDiff < minTimeDiff)
             {
-                minDistance = dist;
+                minTimeDiff = timeDiff;
                 closestNote = note;
             }
         }
 
         if (closestNote != null)
         {
-            bool hit = closestNote.TryHit(inputType);
+            // Passa il tipo della nota stessa per evitare mismatch
+            bool hit = closestNote.TryHit(closestNote.noteType);
             if (hit)
             {
                 activeNotes.Remove(closestNote);
-                // Aggiorna punteggio o mostra feedback positivo
-                Debug.Log($"Nota colpita correttamente: Tipo={closestNote.noteType}, Posizione={closestNote.transform.position.x}, Tempo={closestNote.noteTime} ms");
+                Debug.Log($"HIT: Tipo={closestNote.noteType}, Tempo nota={closestNote.noteTime} ms, Tempo attuale={songTime:F1} ms");
             }
             else
             {
-
-                Debug.Log($"Nota non colpita correttamente: Tipo={closestNote.noteType}, Posizione={closestNote.transform.position.x}, Tempo={closestNote.noteTime} ms");
+                Debug.Log($"MISS: Tipo={closestNote.noteType}, Tempo nota={closestNote.noteTime} ms, Tempo attuale={songTime:F1} ms");
             }
         }
         else
         {
-            
-            Debug.Log("Nessuna nota da colpire in questo momento.");
+            Debug.Log("MISS: nessuna nota colpita.");
+            // Qui puoi aggiungere logica per decrementare punteggio o mostrare feedback visivo
         }
     }
 

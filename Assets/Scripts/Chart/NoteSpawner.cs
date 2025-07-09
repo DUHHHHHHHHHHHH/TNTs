@@ -5,23 +5,31 @@ public class NoteSpawner : MonoBehaviour
 {
     public GameObject notePrefab;
     public Transform spawnPoint;
+    public Transform hitPositionTransform; // Aggiunto per linea di hit
 
     public float baseScrollSpeed = 5f;
     public float userScrollSpeed = 1f;
 
-        public void SpawnAllNotes(List<int> noteTimes, List<Note.NoteType> noteTypes)
-{
-    float effectiveSpeed = baseScrollSpeed * userScrollSpeed;
+    private GameManager gameManager;
 
-    for (int i = 0; i < noteTimes.Count; i++)
+    void Awake()
+    {
+        gameManager = FindObjectOfType<GameManager>();
+        if (gameManager == null)
         {
-            // Calcola la distanza dalla linea di hit in base al tempo assoluto della nota
-            float distance = noteTimes[i] * effectiveSpeed * 0.001f; // ms -> s
+            Debug.LogError("GameManager non trovato nella scena!");
+        }
+    }
 
-            // Posizione di spawn a destra della spawnPoint
+    public void SpawnAllNotes(List<int> noteTimes, List<Note.NoteType> noteTypes)
+    {
+        float effectiveSpeed = baseScrollSpeed * userScrollSpeed;
+
+        for (int i = 0; i < noteTimes.Count; i++)
+        {
+            float distance = noteTimes[i] * effectiveSpeed * 0.001f; // ms -> s
             Vector3 pos = spawnPoint.position + Vector3.right * distance;
 
-            // Crea la nota
             GameObject noteObj = Instantiate(notePrefab, pos, Quaternion.identity);
             Note noteScript = noteObj.GetComponent<Note>();
 
@@ -30,13 +38,39 @@ public class NoteSpawner : MonoBehaviour
                 noteScript.noteType = noteTypes[i];
                 noteScript.noteTime = noteTimes[i];
                 noteScript.speed = effectiveSpeed;
-                noteScript.hitPositionX = spawnPoint.position.x;
-                noteScript.noteType = noteTypes[i];
 
-                Debug.Log($"Nota creata: Tempo={noteTimes[i]} ms, Tipo={noteTypes[i]}, Posizione={pos}, Velocità={effectiveSpeed}");
+                if (hitPositionTransform != null)
+                {
+                    noteScript.hitPositionX = hitPositionTransform.position.x;
+                }
+                else
+                {
+                    Debug.LogWarning("hitPositionTransform non assegnato, uso spawnPoint come fallback.");
+                    noteScript.hitPositionX = spawnPoint.position.x;
+                }
+
+                if (gameManager != null)
+                {
+                    gameManager.RegisterNote(noteScript);
+                }
+                else
+                {
+                    Debug.LogWarning("GameManager non trovato, nota non registrata.");
+                }
             }
         }
-}
+    }
 
-
+    // Metodo per disegnare la linea di hit nel Scene View
+    void OnDrawGizmos()
+    {
+        if (hitPositionTransform != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(
+                new Vector3(hitPositionTransform.position.x, -10f, 0f),
+                new Vector3(hitPositionTransform.position.x, 10f, 0f)
+            );
+        }
+    }
 }

@@ -30,15 +30,12 @@ public class ChartReader : MonoBehaviour
                     int time = int.Parse(parts[2]);
                     int typeValue = int.Parse(parts[4]);
 
-                    // debug
-                    Debug.Log($"Read note: Time={time} ms, TypeValue={typeValue}");
+                    // Debug.Log($"Read note: Time={time} ms, TypeValue={typeValue}");
 
                     noteTimes.Add(time);
 
                     // Determina il tipo di nota in base al valore type
                     // Rileva sia Don che Kan correttamente
-
-                    Debug.Log($"TypeValue: {typeValue}");
 
                     /*
 
@@ -81,8 +78,5 @@ public class ChartReader : MonoBehaviour
         }
     }
 
-    public void SpawnAllNotes()
-    {
-        noteSpawner.SpawnAllNotes(noteTimes, noteTypes);
-    }
+    public void SpawnAllNotes() { noteSpawner.SpawnAllNotes(noteTimes, noteTypes); }
 }
