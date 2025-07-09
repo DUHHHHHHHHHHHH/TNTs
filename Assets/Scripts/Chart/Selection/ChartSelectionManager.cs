@@ -8,11 +8,13 @@ using System;
 public class ChartSelectionManager : MonoBehaviour
 {
     [Header("UI References")]
-    public Dropdown FolderDropdown;
-    public Dropdown OsuDropdown;
-    public Image backgroundImage;
+    public RectTransform folderListContent; // Content della ScrollView dei folder (destra)
+    public RectTransform chartListContent;  // Content della ScrollView dei chart (sinistra)
+    public GameObject folderItemPrefab;     // Prefab FolderItem (solo bottone con nome folder)
+    public GameObject chartItemPrefab;      // Prefab ChartItem (bottone con nome chart)
 
-    [Header("Song Info Display (Chart Selection Scene)")]
+    [Header("Background & Info UI")]
+    public Image backgroundImage;
     public Text songTitleText;
     public Text songTitleUnicodeText;
     public Text songArtistText;
@@ -23,159 +25,158 @@ public class ChartSelectionManager : MonoBehaviour
     public Text songTagsText;
 
     private List<string> folders = new List<string>();
-    private List<string> osuFiles = new List<string>();
-    private string selectedFolderPath;
+    private Dictionary<string, List<string>> folderCharts = new Dictionary<string, List<string>>();
+
+    private string selectedChartPath;
     private string selectedBgPath;
 
     private static MetadataPicker currentSelectedMetadata;
 
     void Start()
     {
-        LoadFolders();
-        FolderDropdown.onValueChanged.AddListener(OnFolderChanged);
-        OsuDropdown.onValueChanged.AddListener(OnOsuFileChanged);
-
-        if (folders.Count > 0)
-        {
-            FolderDropdown.value = 0;
-        }
-        else
-        {
-            ClearSongInfoDisplay();
-        }
+        LoadFoldersAndCharts();
+        PopulateFolderList();
+        ClearSongInfoDisplay();
     }
 
     private string GetChartsRootFolder()
     {
         string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        string taikoChartsPath = Path.Combine(documentsPath, "taiko", "taikocharts");
+        string taikoChartsPath = Path.Combine(documentsPath, "Taiko", "TaikoCharts");
         return taikoChartsPath;
     }
 
-    void LoadFolders()
+    void LoadFoldersAndCharts()
     {
         folders.Clear();
-        FolderDropdown.ClearOptions();
+        folderCharts.Clear();
 
         string rootPath = GetChartsRootFolder();
         if (!Directory.Exists(rootPath))
         {
             Debug.LogError($"Cartella root non trovata: {rootPath}");
-            FolderDropdown.AddOptions(new List<string> { "Nessuna cartella trovata" });
             return;
         }
 
         string[] dirs = Directory.GetDirectories(rootPath);
-        List<string> options = new List<string>();
-
         foreach (var dir in dirs)
         {
             string folderName = Path.GetFileName(dir);
-            folders.Add(dir);
-            options.Add(folderName);
+            folders.Add(folderName);
+
+            string[] osuFiles = Directory.GetFiles(dir, "*.osu");
+            folderCharts[folderName] = new List<string>(osuFiles);
+
+            // Carica background immagine folder (primo file immagine trovato)
+            string[] possibleExtensions = new[] { ".png", ".jpg", ".jpeg" };
+            foreach (var ext in possibleExtensions)
+            {
+                var imgs = Directory.GetFiles(dir, "*" + ext);
+                if (imgs.Length > 0)
+                {
+                    selectedBgPath = imgs[0]; // Puoi gestire meglio se vuoi background per folder
+                    break;
+                }
+            }
         }
-
-        if (options.Count == 0)
-            options.Add("Nessuna cartella trovata");
-
-        FolderDropdown.AddOptions(options);
     }
 
-    void OnFolderChanged(int index)
+    void PopulateFolderList()
     {
-        if (index < 0 || index >= folders.Count)
+        // Pulisci prima
+        foreach (Transform child in folderListContent)
+            Destroy(child.gameObject);
+
+        foreach (var folderName in folders)
         {
-            ClearSongInfoDisplay();
+            GameObject folderGO = Instantiate(folderItemPrefab, folderListContent);
+            folderGO.name = "Folder_" + folderName;
+
+            Button folderButton = folderGO.GetComponentInChildren<Button>();
+            Text folderButtonText = folderButton.GetComponentInChildren<Text>();
+
+            folderButtonText.text = folderName;
+
+            // Listener per selezionare il folder e popolare la lista chart
+            folderButton.onClick.AddListener(() =>
+            {
+                PopulateChartList(folderCharts[folderName]);
+            });
+        }
+    }
+
+    void PopulateChartList(List<string> chartPaths)
+    {
+        // Pulisci prima
+        foreach (Transform child in chartListContent)
+            Destroy(child.gameObject);
+
+        foreach (var chartPath in chartPaths)
+        {
+            GameObject chartGO = Instantiate(chartItemPrefab, chartListContent);
+            chartGO.name = "Chart_" + Path.GetFileNameWithoutExtension(chartPath);
+
+            Button chartButton = chartGO.GetComponent<Button>();
+            Text chartButtonText = chartButton.GetComponentInChildren<Text>();
+            chartButtonText.text = Path.GetFileName(chartPath);
+
+            chartButton.onClick.AddListener(() =>
+            {
+                OnChartSelected(chartPath);
+            });
+        }
+    }
+
+    void OnChartSelected(string chartPath)
+{
+    if (selectedChartPath == chartPath)
+    {
+        // Se clicchi di nuovo lo stesso chart, avvia subito il gameplay
+        OnPlayButtonPressed();
+        return;
+    }
+
+    selectedChartPath = chartPath;
+
+    // Carica background come sopra
+    string folderPath = Path.GetDirectoryName(chartPath);
+    selectedBgPath = null;
+    string[] possibleExtensions = new[] { ".png", ".jpg", ".jpeg" };
+    foreach (var ext in possibleExtensions)
+    {
+        var imgs = Directory.GetFiles(folderPath, "*" + ext);
+        if (imgs.Length > 0)
+        {
+            selectedBgPath = imgs[0];
+            break;
+        }
+    }
+
+    currentSelectedMetadata = MetadataPicker.Parse(chartPath);
+    UpdateSongInfoDisplay(currentSelectedMetadata);
+    LoadBackgroundFromChart();
+
+    PlayerPrefs.SetString("SelectedChart", chartPath);
+}
+
+    void LoadBackgroundFromChart()
+    {
+        if (string.IsNullOrEmpty(selectedBgPath) || !File.Exists(selectedBgPath))
+        {
+            backgroundImage.sprite = null;
             return;
         }
 
-        selectedFolderPath = folders[index];
-        LoadOsuFiles(selectedFolderPath);
-        LoadBackground(selectedFolderPath);
-
-        if (osuFiles.Count > 0)
+        byte[] imageData = File.ReadAllBytes(selectedBgPath);
+        Texture2D tex = new Texture2D(2, 2);
+        if (tex.LoadImage(imageData))
         {
-            OsuDropdown.value = 0;
-        }
-        else
-        {
-            ClearSongInfoDisplay();
-        }
-    }
-
-    void LoadOsuFiles(string folderPath)
-    {
-        osuFiles.Clear();
-        OsuDropdown.ClearOptions();
-
-        string[] files = Directory.GetFiles(folderPath, "*.osu");
-        List<string> options = new List<string>();
-
-        foreach (var file in files)
-        {
-            string fileName = Path.GetFileName(file);
-            osuFiles.Add(file);
-            options.Add(fileName);
-        }
-
-        if (options.Count == 0)
-            options.Add("Nessun file .osu trovato");
-
-        OsuDropdown.AddOptions(options);
-    }
-
-    void LoadBackground(string folderPath)
-    {
-        string[] possibleExtensions = new[] { ".png", ".jpg", ".jpeg" };
-        string bgPath = null;
-        foreach (var ext in possibleExtensions)
-        {
-            var files = Directory.GetFiles(folderPath, "*" + ext, SearchOption.TopDirectoryOnly);
-            if (files.Length > 0)
-            {
-                bgPath = files[0];
-                break;
-            }
-        }
-
-        selectedBgPath = bgPath;
-
-        if (!string.IsNullOrEmpty(bgPath) && File.Exists(bgPath))
-        {
-            byte[] imageData = File.ReadAllBytes(bgPath);
-            Texture2D tex = new Texture2D(2, 2);
-            if (tex.LoadImage(imageData))
-            {
-                backgroundImage.sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
-            }
-            else
-            {
-                Debug.LogWarning("Impossibile caricare l'immagine di sfondo.");
-                backgroundImage.sprite = null;
-            }
+            backgroundImage.sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
         }
         else
         {
             backgroundImage.sprite = null;
         }
-    }
-
-    void OnOsuFileChanged(int index)
-    {
-        if (index < 0 || index >= osuFiles.Count)
-        {
-            ClearSongInfoDisplay();
-            currentSelectedMetadata = null;
-            return;
-        }
-
-        string selectedOsuFile = osuFiles[index];
-        Debug.Log($"File .osu selezionato: {selectedOsuFile}");
-
-        currentSelectedMetadata = MetadataPicker.Parse(selectedOsuFile);
-        UpdateSongInfoDisplay(currentSelectedMetadata);
-
-        PlayerPrefs.SetString("SelectedChart", selectedOsuFile);
     }
 
     private void UpdateSongInfoDisplay(MetadataPicker metadata)
@@ -210,16 +211,13 @@ public class ChartSelectionManager : MonoBehaviour
 
     public void OnPlayButtonPressed()
     {
-        if (currentSelectedMetadata == null)
+        if (string.IsNullOrEmpty(selectedChartPath))
         {
-            Debug.LogError("Nessuna chart selezionata o metadata non disponibili per l'avvio del gioco.");
+            Debug.LogError("Nessuna chart selezionata");
             return;
         }
 
-        int selectedIndex = OsuDropdown.value;
-        string selectedOsuPath = osuFiles[selectedIndex];
-
-        PlayerPrefs.SetString("SelectedChart", selectedOsuPath);
+        PlayerPrefs.SetString("SelectedChart", selectedChartPath);
         PlayerPrefs.SetString("SelectedBgPath", selectedBgPath ?? "");
         SceneManager.LoadScene("Gameplay");
     }
