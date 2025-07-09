@@ -62,6 +62,7 @@ public class Note : MonoBehaviour
         // Se la nota è passata oltre la hitPositionX + tolleranza, considerala miss e distruggila
         if (gameManager.songTime - noteTime > gameManager.hitWindowMs)
         {
+            gameManager.NoteMissed(this);
             Destroy(gameObject);
             gameManager.UnregisterNote(this);
             Debug.Log($"Nota persa: Tipo={noteType}, Tempo nota={noteTime} ms, Tempo attuale={gameManager.songTime:F1} ms");

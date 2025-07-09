@@ -5,9 +5,13 @@ public class GameManager : MonoBehaviour
 {
     public List<Note> activeNotes = new List<Note>();
     public InputManager inputManager;
+    public JudgementDisplay judgementDisplay;
+    public SoundManager soundManager;
 
     public float songTime = 0f; // tempo in millisecondi dall’inizio della mappa
-    public float hitWindowMs = 100f; // tolleranza in ms
+    public float hitWindowMs = 50f; // tolleranza in ms
+
+    private string lastJudgement = "";
 
     void Update()
     {
@@ -42,20 +46,73 @@ public class GameManager : MonoBehaviour
 
         if (closestNote != null)
         {
+            float timeDiff = Mathf.Abs(closestNote.noteTime - songTime);
+            string judgement;
+            if (timeDiff <= hitWindowMs * 0.5f)
+                judgement = "Marvelous";
+            else if (timeDiff <= hitWindowMs)
+                judgement = "Great";
+            else
+                judgement = "Miss";
+
             bool hit = closestNote.TryHit(closestNote.noteType);
             if (hit)
             {
                 activeNotes.Remove(closestNote);
-                Debug.Log($"HIT: Tipo={closestNote.noteType}, Tempo nota={closestNote.noteTime} ms, Tempo attuale={songTime:F1} ms");
+
+                // Suoni finisher gestiti qui
+                if (soundManager != null)
+                {
+                    switch (closestNote.noteType)
+                    {
+                        case Note.NoteType.FinisherDon:
+                            soundManager.PlayFinisherDon();
+                            break;
+                        case Note.NoteType.FinisherKan:
+                            soundManager.PlayFinisherKan();
+                            break;
+                    }
+                }
+
+                if (judgement != lastJudgement)
+                {
+                    judgementDisplay.ShowJudgement(judgement);
+                    lastJudgement = judgement;
+                }
+                Debug.Log($"HIT: {judgement}");
             }
             else
             {
-                Debug.Log($"MISS: Tipo={closestNote.noteType}, Tempo nota={closestNote.noteTime} ms, Tempo attuale={songTime:F1} ms");
+                PlayMissSound();
             }
         }
         else
         {
-            Debug.Log("MISS: nessuna nota colpita.");
+            // Ghosttapping ignorato
+            Debug.Log("GhostTapping");
+        }
+    }
+
+    public void NoteMissed(Note note)
+    {
+        if (activeNotes.Contains(note))
+        {
+            activeNotes.Remove(note);
+            PlayMissSound();
+            Debug.Log("MISS: nota persa oltre la finestra di hit");
+        }
+    }
+
+    private void PlayMissSound()
+    {
+        if (lastJudgement != "Miss")
+        {
+            judgementDisplay.ShowJudgement("Miss");
+            lastJudgement = "Miss";
+        }
+        if (soundManager != null)
+        {
+            soundManager.PlayMiss();
         }
     }
 
