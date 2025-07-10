@@ -61,7 +61,7 @@ public class NoteSpawner : MonoBehaviour
         }
     }
 
-    // Metodo per disegnare la linea di hit nel Scene View
+    // Metodo per disegnare una linea di hit nella scena, visibile solo da unity.
     void OnDrawGizmos()
     {
         if (hitPositionTransform != null)

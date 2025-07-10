@@ -52,19 +52,22 @@ public class ChartReader : MonoBehaviour
                     */
 
                     if (typeValue == 0) { noteTypes.Add(Note.NoteType.Don); }
-                    else if (typeValue == 2 || typeValue == 8 || typeValue == 10) {
-                        noteTypes.Add(Note.NoteType.Kan); }
+                    else if (typeValue == 2 || typeValue == 8 || typeValue == 10)
+                    {
+                        noteTypes.Add(Note.NoteType.Kan);
+                    }
                     else if (typeValue == 4) { noteTypes.Add(Note.NoteType.FinisherDon); }
                     else if (typeValue == 6 || typeValue == 12 || typeValue == 14)
                     { noteTypes.Add(Note.NoteType.FinisherKan); }
-                    else{ noteTypes.Add(Note.NoteType.Don); }
-                    
-                }   
+                    else { noteTypes.Add(Note.NoteType.Don); }
+
+                }
 
             }
         }
 
         /* NormalizeNoteTimes(); */ // se si vuole la prima nota a 0ms
+        AddDelayToNoteTimes(100); // Aggiungi un ritardo di 100ms a tutte le note
     }
 
     void NormalizeNoteTimes()
@@ -75,6 +78,14 @@ public class ChartReader : MonoBehaviour
         for (int i = 0; i < noteTimes.Count; i++)
         {
             noteTimes[i] = noteTimes[i] - firstNoteTime;
+        }
+    }
+
+    void AddDelayToNoteTimes(int delayMs)
+    {
+        for (int i = 0; i < noteTimes.Count; i++)
+        {
+            noteTimes[i] += delayMs;
         }
     }
 
